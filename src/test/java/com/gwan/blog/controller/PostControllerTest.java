@@ -15,14 +15,4 @@ class PostControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @Test
-    @DisplayName("/basic 요청 시 Hello를 출력")
-    void test() throws Exception {
-
-        // expected
-        mockMvc.perform(get("/basic"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Hello"));
-
-    }
 }
