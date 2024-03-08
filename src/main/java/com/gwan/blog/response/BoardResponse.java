@@ -1,7 +1,9 @@
 package com.gwan.blog.response;
 
 import com.gwan.blog.domain.Board;
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Builder
