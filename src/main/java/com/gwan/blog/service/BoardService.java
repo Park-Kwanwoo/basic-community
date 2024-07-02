@@ -3,45 +3,49 @@ package com.gwan.blog.service;
 import com.gwan.blog.domain.Board;
 import com.gwan.blog.domain.BoardEditor;
 import com.gwan.blog.exception.BoardNotFound;
-import com.gwan.blog.repository.BoardRepository;
-import com.gwan.blog.request.BoardCreate;
-import com.gwan.blog.request.BoardEdit;
-import com.gwan.blog.request.BoardPagination;
-import com.gwan.blog.response.BoardListResponse;
-import com.gwan.blog.response.BoardResponse;
+import com.gwan.blog.exception.UserNotFound;
+import com.gwan.blog.repository.UserRepository;
+import com.gwan.blog.repository.board.BoardRepository;
+import com.gwan.blog.request.board.BoardCreate;
+import com.gwan.blog.request.board.BoardEdit;
+import com.gwan.blog.request.board.BoardPagination;
+import com.gwan.blog.response.board.BoardListResponse;
+import com.gwan.blog.response.board.BoardUserResponse;
+import com.gwan.blog.response.PagingResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class BoardService {
 
     private final BoardRepository boardRepository;
+    private final UserRepository userRepository;
 
-    public void write(BoardCreate boardCreate) {
+    public void write(Long userId, BoardCreate boardCreate) {
 
-        Board board = BoardCreate.toEntity(boardCreate);
+        var user = userRepository.findById(userId)
+                .orElseThrow(UserNotFound::new);
+
+        Board.BoardBuilder boardBuilder = BoardCreate.toEntity(boardCreate);
+        Board board = boardBuilder
+                .user(user)
+                .build();
 
         boardRepository.save(board);
     }
 
-    public BoardResponse get(Long id) {
+    public BoardUserResponse get(Long id) {
 
-        Board board = boardRepository.findById(id)
-                .orElseThrow(BoardNotFound::new);
-
-        return BoardResponse.toBoardResponse(board);
+        return boardRepository.getBoardAndUser(id);
     }
 
-    public List<BoardListResponse> getList(BoardPagination boardPagination) {
+    public PagingResponse<BoardListResponse> getList(BoardPagination boardPagination) {
+        Page<Board> boardPage = boardRepository.getList(boardPagination);
 
-        return boardRepository.getList(boardPagination).stream()
-                .map(BoardListResponse::toBoardList)
-                .collect(Collectors.toList());
+        return new PagingResponse<>(boardPage, BoardListResponse.class);
     }
 
     @Transactional

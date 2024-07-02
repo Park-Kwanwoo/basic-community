@@ -1,82 +1,103 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '3.2.0'
-	id 'io.spring.dependency-management' version '1.1.4'
+    id 'java'
+    id 'org.springframework.boot' version '3.2.1'
+    id 'io.spring.dependency-management' version '1.1.4'
 
-	// restdocs-api-spec -> restdocs extension 포함
-	id 'com.epages.restdocs-api-spec' version '0.18.2'
+    // restdocs-api-spec -> restdocs extension 포함
+    id 'com.epages.restdocs-api-spec' version '0.18.2'
 
-	// swagger generator 플러그인
-	id 'org.hidetake.swagger.generator' version '2.18.2'
+    // swagger generator 플러그인
+    id 'org.hidetake.swagger.generator' version '2.18.2'
+
 }
 
 group = 'com.gwan'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	sourceCompatibility = '17'
+    sourceCompatibility = '17'
 }
 
 configurations {
-	compileOnly {
-		extendsFrom annotationProcessor
-	}
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
 
-	asciidoctorExt
+    asciidoctorExt
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
 ext {
-	swaggerVersion = '2.18.2'
-	restdocsApiSpecVertion = '0.18.2'
- 	asciidocVersion = '3.0.1'
+    swaggerVersion = '2.18.2'
+    restdocsApiSpecVertion = '0.18.2'
+    asciidocVersion = '3.0.1'
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
 
-	// Validation
-	implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // Annotation Processor
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
-	compileOnly 'org.projectlombok:lombok'
-	runtimeOnly 'com.h2database:h2'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // Spring security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.security:spring-security-test'
 
-	// Querydsl
-	implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
-	annotationProcessor "com.querydsl:querydsl-apt:${dependencyManagement.importedProperties['querydsl.version']}:jakarta"
-	annotationProcessor "jakarta.annotation:jakarta.annotation-api"
-	annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+    // JDBC-Session
+    implementation 'org.springframework.session:spring-session-jdbc'
 
-	// Rest Docs를 이용하여 OAS로 변환
-	testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:${asciidocVersion}"
-	testImplementation "com.epages:restdocs-api-spec-mockmvc:${restdocsApiSpecVertion}"
+    // Validation
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-	// Swagger UI
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // lombok 테스트 사용
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    runtimeOnly 'com.h2database:h2'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    // Querydsl
+    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
+    annotationProcessor "com.querydsl:querydsl-apt:${dependencyManagement.importedProperties['querydsl.version']}:jakarta"
+    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+
+    // Rest Docs를 이용하여 OAS로 변환
+    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:${asciidocVersion}"
+    testImplementation "com.epages:restdocs-api-spec-mockmvc:${restdocsApiSpecVertion}"
+
+    // Swagger UI
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
+
+    // JSON Web Token
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
 }
 tasks.named('test') {
-	useJUnitPlatform()
+    useJUnitPlatform()
 }
 // openapi3	작성 자동화를 위해 패키징 전에 openapi3 task 선 실행을 유발
 bootJar {
-	dependsOn(':openapi3')
+    dependsOn(':openapi3')
 }
 
 openapi3 {
 
-	server = "http://localhost:8080"
-	title = "My API"
-	description "Spring REST Docs with SwaggerUI."
-	version "0.0.1"
-	outputFileNamePrefix = 'open-api-3.0.1'
-	format = 'json'
+    server = "http://localhost:8080"
+    title = "My API"
+    description "Spring REST Docs with SwaggerUI."
+    version "0.0.1"
+    outputFileNamePrefix = 'open-api-3.0.1'
+    format = 'json'
 
-	outputDirectory = 'build/resources/main/static/docs'
+    outputDirectory = 'build/resources/main/static/docs'
 
 }

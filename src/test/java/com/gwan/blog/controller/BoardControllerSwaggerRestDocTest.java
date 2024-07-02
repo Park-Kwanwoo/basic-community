@@ -1,13 +1,15 @@
 package com.gwan.blog.controller;
 
 import com.epages.restdocs.apispec.ResourceSnippetParameters;
-import com.epages.restdocs.apispec.Schema;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gwan.blog.config.BlogMockUser;
 import com.gwan.blog.domain.Board;
-import com.gwan.blog.repository.BoardRepository;
-import com.gwan.blog.request.BoardCreate;
-import com.gwan.blog.request.BoardEdit;
+import com.gwan.blog.exception.UserNotFound;
+import com.gwan.blog.repository.board.BoardRepository;
+import com.gwan.blog.repository.UserRepository;
+import com.gwan.blog.request.board.BoardCreate;
+import com.gwan.blog.request.board.BoardEdit;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,7 +48,17 @@ public class BoardControllerSwaggerRestDocTest {
     private BoardRepository boardRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private ObjectMapper obj;
+
+    @AfterEach
+    void clean() {
+        userRepository.deleteAll();
+        boardRepository.deleteAll();
+
+    }
 
     @BeforeEach
     void setUp(final RestDocumentationContextProvider restDocumentation) {
@@ -56,6 +68,7 @@ public class BoardControllerSwaggerRestDocTest {
     }
 
     @Test
+    @BlogMockUser
     @DisplayName("게시글 작성")
     void CREATE_BOARD() throws Exception {
 
@@ -66,8 +79,7 @@ public class BoardControllerSwaggerRestDocTest {
                 .build();
 
         String data = obj.writeValueAsString(board);
-        obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
-
+//        obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
 
         mockMvc.perform(post("/board")
                         .contentType(APPLICATION_JSON)
@@ -88,13 +100,18 @@ public class BoardControllerSwaggerRestDocTest {
     }
 
     @Test
+    @BlogMockUser
     @DisplayName("게시글 단건 조회")
     void GET_BOARD() throws Exception {
 
         // given
+        var user = userRepository.findByEmail("gwan@blog.com")
+                .orElseThrow(UserNotFound::new);
+
         Board board = Board.builder()
                 .title("제목입니다.")
                 .content("내용입니다.")
+                .user(user)
                 .build();
 
         boardRepository.save(board);
@@ -142,13 +159,18 @@ public class BoardControllerSwaggerRestDocTest {
     }
 
     @Test
+    @BlogMockUser
     @DisplayName("게시글 수정")
     void EDIT_BOARD() throws Exception {
 
         // given
+        var user = userRepository.findByEmail("gwan@blog.com")
+                .orElseThrow(UserNotFound::new);
+
         Board board = Board.builder()
                 .title("수정 전 제목")
                 .content("수정 전 내용")
+                .user(user)
                 .build();
 
         boardRepository.save(board);
@@ -159,7 +181,7 @@ public class BoardControllerSwaggerRestDocTest {
                 .build();
 
         String editData = obj.writeValueAsString(boardEdit);
-        obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+//        obj.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
 
         mockMvc.perform(patch("/board/{boardId}", board.getId())
                         .contentType(APPLICATION_JSON)
@@ -183,13 +205,18 @@ public class BoardControllerSwaggerRestDocTest {
     }
 
     @Test
+    @BlogMockUser
     @DisplayName("게시글 삭제")
     void DELETE_BOARD() throws Exception {
 
+        var user = userRepository.findByEmail("gwan@blog.com")
+                .orElseThrow(UserNotFound::new);
+
         // given
         Board board = Board.builder()
-                .title("제목")
-                .content("내용")
+                .user(user)
+                .title("제목입니다.")
+                .content("내용입니다.")
                 .build();
 
         boardRepository.save(board);

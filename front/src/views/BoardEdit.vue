@@ -1,61 +1,63 @@
 <script setup lang="ts">
-import {onMounted, ref} from "vue";
-import axios from "axios";
-import {useRouter} from "vue-router";
+import { onMounted, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 
-const router = useRouter();
+import { container } from 'tsyringe'
+import BoardRepository from '@/respository/BoardRepository'
+import BoardEdit from '@/entity/board/BoardEdit'
+import Board from '@/entity/board/Board'
 
-const props = defineProps({
-  boardId: {
-    type: [Number, String],
-    require: true,
-  }
-})
+const router = useRouter()
 
-const board = ref({
-  id: Number,
-  title: String,
-  content: String
+const props = defineProps<{
+  boardId: number
+}>()
+
+const BOARD_REPOSITORY = container.resolve(BoardRepository)
+type StateType = {
+  boardEdit: BoardEdit
+}
+
+const state = reactive<StateType>({
+  boardEdit: new BoardEdit(),
 })
 
 onMounted(() => {
-  axios.get(`/api/board/${props.boardId}`)
-      .then(res => {
-        board.value = res.data;
-      })
-      .catch(err => {
-        console.log(err);
-      })
+  getBoard()
 })
 
-const edit = () => {
-  axios.patch(`/api/board/${props.boardId}`, board.value)
-      .then(res => {
-        router.replace({name: 'BoardRead'})
-      })
-      .catch(err => {
-        console.log(err);
-      })
+function getBoard() {
+  BOARD_REPOSITORY.get(props.boardId)
+    .then((boardEdit: BoardEdit) => {
+      state.boardEdit = boardEdit
+    })
+    .catch((e) => {
+      console.error(e)
+    })
 }
 
-const cancel = () => {
-  axios.get(`/api/board/${props.boardId}`)
-      .then(res => {
-        router.replace({name: 'BoardRead'})
-      })
-      .catch(err => {
-        console.log(err);
-      })
+function edit() {
+  BOARD_REPOSITORY.edit(state.boardEdit, props.boardId)
+    .then(() => {
+      router.push({ name: 'BoardRead', params: props.boardId })
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+}
+
+function cancel() {
+  router.push({ name: 'BoardRead', params: props.boardId })
 }
 </script>
 
 <template>
   <div class="title">
-    <el-input type="text" v-model="board.title" readonly></el-input>
+    <el-input type="text" v-model="state.boardEdit.title" readonly></el-input>
   </div>
 
   <div class="content">
-    <el-input type="textarea" v-model="board.content" rows="30"></el-input>
+    <el-input type="textarea" v-model="state.boardEdit.content" rows="30"></el-input>
   </div>
 
   <div class="button">
@@ -65,7 +67,6 @@ const cancel = () => {
 </template>
 
 <style scoped>
-
 .content {
   margin-top: 5px;
 }

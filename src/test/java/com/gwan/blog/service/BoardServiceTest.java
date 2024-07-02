@@ -1,9 +1,12 @@
 package com.gwan.blog.service;
 
 import com.gwan.blog.domain.Board;
+import com.gwan.blog.domain.User;
 import com.gwan.blog.exception.BoardNotFound;
-import com.gwan.blog.repository.BoardRepository;
-import com.gwan.blog.request.BoardEdit;
+import com.gwan.blog.repository.board.BoardRepository;
+import com.gwan.blog.repository.UserRepository;
+import com.gwan.blog.request.board.BoardCreate;
+import com.gwan.blog.request.board.BoardEdit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,11 +23,43 @@ class BoardServiceTest {
     private BoardRepository boardRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private BoardService boardService;
 
     @BeforeEach
-    void clean() {
+    void clean()  {
         boardRepository.deleteAll();
+    }
+
+    @Test
+    @DisplayName("[SERVICE][SUCCESS] - 글 작성 성공")
+    void POST_SUCCESS_BOARD_CREATE() {
+
+        var user = User.builder()
+                .name("관맨")
+                .password("1234")
+                .email("gwan@blog.com")
+                .build();
+
+
+        var boardCreate = BoardCreate.builder()
+                .title("제목")
+                .content("내용")
+                .build();
+
+        userRepository.save(user);
+
+        boardService.write(user.getId(), boardCreate);
+
+        assertEquals(1L, boardRepository.count());
+        Board savedBoard = boardRepository.findAll().get(0);
+
+        assertEquals("제목", savedBoard.getTitle());
+        assertEquals("내용", savedBoard.getContent());
+        assertEquals(user.getEmail(), savedBoard.getUser().getEmail() );
+
     }
 
     @Test

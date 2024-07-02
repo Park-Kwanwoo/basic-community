@@ -2,6 +2,7 @@ package com.gwan.blog.controller;
 
 import com.gwan.blog.exception.BlogException;
 import com.gwan.blog.response.ErrorResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
 
+@Slf4j
 @RestControllerAdvice
 public class BlogExceptionController {
 
@@ -47,6 +49,24 @@ public class BlogExceptionController {
 
         ResponseEntity<ErrorResponse> errorResponse = ResponseEntity
                 .status(e.getStatusCode())
+                .body(error);
+
+        return errorResponse;
+    }
+
+    @ResponseBody
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> exception(Exception e) {
+
+        log.error("예외 발생", e);
+
+        ErrorResponse error = ErrorResponse.builder()
+                .code("500")
+                .message(e.getMessage())
+                .build();
+
+        ResponseEntity<ErrorResponse> errorResponse = ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(error);
 
         return errorResponse;

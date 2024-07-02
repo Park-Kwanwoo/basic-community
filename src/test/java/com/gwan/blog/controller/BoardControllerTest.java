@@ -1,12 +1,16 @@
 package com.gwan.blog.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gwan.blog.config.BlogMockUser;
 import com.gwan.blog.domain.Board;
+import com.gwan.blog.domain.User;
 import com.gwan.blog.exception.BoardNotFound;
-import com.gwan.blog.repository.BoardRepository;
-import com.gwan.blog.request.BoardCreate;
-import com.gwan.blog.request.BoardEdit;
-import org.junit.jupiter.api.BeforeEach;
+import com.gwan.blog.exception.UserNotFound;
+import com.gwan.blog.repository.board.BoardRepository;
+import com.gwan.blog.repository.UserRepository;
+import com.gwan.blog.request.board.BoardCreate;
+import com.gwan.blog.request.board.BoardEdit;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,15 +42,20 @@ class BoardControllerTest {
     private BoardRepository boardRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private ObjectMapper obj;
 
     // 각 TEST가 실행되기 전 Repository 비우기
-    @BeforeEach
+    @AfterEach
     void clean() {
+        userRepository.deleteAll();
         boardRepository.deleteAll();
     }
 
     @Test
+    @BlogMockUser
     @DisplayName("[CONTROLLER][POST][FAILED] - 새로운 글 작성 시 부적절한 요청으로 인한 실패 케이스")
     void POST_BOARD_INVALID_REQUEST() throws Exception {
 
@@ -72,6 +81,7 @@ class BoardControllerTest {
     }
 
     @Test
+    @BlogMockUser
     @DisplayName("[CONTROLLER][POST][SUCCESS] - 새로운 글 작성시 성공 케이스")
     void POST_BOARD_VALID_REQUEST() throws Exception {
 
@@ -82,7 +92,6 @@ class BoardControllerTest {
                 .build();
 
         String jsonData = obj.writeValueAsString(boardCreate);
-
 
         // expected
         mockMvc.perform(post("/board")
@@ -104,9 +113,18 @@ class BoardControllerTest {
     void GET_BOARD() throws Exception {
 
         // given
+        User user = User.builder()
+                .email("gwan@blog.com")
+                .password("1234")
+                .name("관맨")
+                .build();
+
+        userRepository.save(user);
+
         Board board = Board.builder()
                 .title("제목입니다.")
                 .content("내용입니다.")
+                .user(user)
                 .build();
 
         boardRepository.save(board);
@@ -126,10 +144,19 @@ class BoardControllerTest {
     void GET_BOARD_LIST() throws Exception {
 
         // given
+        User user = User.builder()
+                .email("gwan@blog.com")
+                .password("1234")
+                .name("관맨")
+                .build();
+
+        userRepository.save(user);
+
         List<Board> boards = IntStream.range(1, 30)
                 .mapToObj(i -> Board.builder()
                         .title("제목" + i)
                         .content("내용" + i)
+                        .user(user)
                         .build())
                 .collect(Collectors.toList());
 
@@ -145,13 +172,18 @@ class BoardControllerTest {
     }
 
     @Test
+    @BlogMockUser
     @DisplayName("[CONTROLLER][PATCH][FAILED] - 글 수정 시 부적절한 요청으로 인한 실패 케이스")
     void PATCH_BOARD_INVALID_REQUEST() throws Exception {
+
+        var user = userRepository.findByEmail("gwan@blog.com")
+                .orElseThrow(UserNotFound::new);
 
         // given
         Board board = Board.builder()
                 .title("제목입니다.")
                 .content("내용입니다.")
+                .user(user)
                 .build();
 
         boardRepository.save(board);
@@ -176,13 +208,18 @@ class BoardControllerTest {
     }
 
     @Test
+    @BlogMockUser
     @DisplayName("[CONTROLLER][PATCH][SUCCESS] - 글 수정에 대한 성공 케이스")
     void PATCH_BOARD_VALID_REQUEST() throws Exception {
+
+        var user = userRepository.findByEmail("gwan@blog.com")
+                .orElseThrow(UserNotFound::new);
 
         // given
         Board board = Board.builder()
                 .title("제목입니다.")
                 .content("내용입니다.")
+                .user(user)
                 .build();
 
         boardRepository.save(board);
@@ -209,11 +246,9 @@ class BoardControllerTest {
     }
 
     @Test
+    @BlogMockUser
     @DisplayName("[CONTROLLER][DELETE][FAILED] - 글 삭제 시 존재하지 않는 글 삭제 실패 케이스")
     void DELETE_BOARD_NOT_EXIST() throws Exception {
-
-        // given
-
 
         // expected
         mockMvc.perform(delete("/board/{boardId}", 1L)
@@ -224,11 +259,17 @@ class BoardControllerTest {
     }
 
     @Test
+    @BlogMockUser
     @DisplayName("[CONTROLLER][DELETE][SUCCESS] - 글 삭제 성공 케이스")
     void DELETE_BOARD_EXIST() throws Exception {
 
+
         // given
+        var user = userRepository.findByEmail("gwan@blog.com")
+                .orElseThrow(UserNotFound::new);
+
         Board board = Board.builder()
+                .user(user)
                 .title("제목입니다.")
                 .content("내용입니다.")
                 .build();
